@@ -1,118 +1,213 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, Touchable, TouchableOpacity, View } from 'react-native'
+import React, { useState } from 'react'
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import  BouncyCheckbox from 'react-native-bouncy-checkbox';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+//form validation 
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+import * as Yup from 'yup';
+import { Formik } from 'formik';
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+
+const PasswordSchema = Yup.object().shape({
+  passwordLength:Yup.number()
+  .min(4,'should be min 4 characters')
+  .max(16,'should max of 16 char')
+  .required('This is Required')
+})
+
+
+export default function App() {
+
+  const [passowrd, setPassword]= useState('')
+  const [isPassGenrated, setIsPassGenrated] =useState(false)
+  const [lowerCase, setLowerCase]= useState(true)
+  const [upperCase, setUpperCase]=useState(true)
+  const [numbers , setNumbers] = useState(false)
+  const [symbols, setSymbols]= useState(false)
+  
+  const genratePasswordString=(passwordLength:number)=>{
+
+    let characterList = '';
+    const upperCaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowerCaseChars ='abcdefghijklmnopqrstuvwxyz';
+    const numberChars = '0123456789';
+    const specialChars = '!@#$%^&*()_+';
+
+    if(upperCase){
+      characterList+=upperCaseChars
+    }
+    if(lowerCase){
+      characterList+=lowerCaseChars
+    }
+    if(numbers){
+      characterList+=numberChars
+    }
+    if(symbols){
+      characterList+=specialChars
+    }
+    
+
+    const passwordResult=createPassword(characterList,passwordLength)
+    
+    setPassword(passwordResult)
+    setIsPassGenrated(true)
+
+  }
+
+
+  const createPassword = (characters:string,passwordLength:number)=>{
+    let result =''
+    for(let i =0; i<passwordLength; i++){
+      const characterIndex = Math.round(Math.random()*characters.length)
+      result += characters.charAt(characterIndex)
+
+    }
+    return result
+
+  }
+  
+  const resetPassword =() =>{
+    setPassword('')
+    setIsPassGenrated(false)
+    setLowerCase(false)
+    setUpperCase(true)
+    setNumbers(false)
+    setSymbols(false)
+    //
+  }
+
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+    <ScrollView keyboardShouldPersistTaps="handled">
+      <SafeAreaView style={styles.appContainer}>
+        <View style={styles.formContainer}>
+          <Text style={styles.title}> Password Generator </Text>
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+          <Formik
+       initialValues={{ passwordLength: ''}}
+       validationSchema={PasswordSchema}
+       onSubmit={values =>{
+        console.log(values)
+        genratePasswordString(+values.passwordLength)
+       }}
+     >
+       {({
+         values,
+         errors,
+         touched,
+         isValid,
+         handleChange,
+         handleSubmit,
+         handleReset,
+         /* and other goodies */
+       }) => (
+        <>
+          <View style={styles.inputWrapper}> 
+            <View style={styles.inputColumn}>
+              <Text style={styles.heading}> Password Length </Text>
+              {touched.passwordLength && errors.passwordLength &&(
+                <Text style={styles.errorText}>
+                  {errors.passwordLength}
+                </Text>
+              )}
+              
+            </View>
+            <TextInput
+              style={styles.inputStyle}
+              value={values.passwordLength}
+              onChangeText={handleChange('passwordLength')}
+              placeholder="ex.8"
+              keyboardType='numeric'
+             />
+          </View>
+          <View style={styles.inputWrapper}>
+            <Text style={styles.heading}> Includes Lower Case</Text>
+            <BouncyCheckbox
+              isChecked={lowerCase}
+              onPress={()=>setLowerCase(!lowerCase)}
+              fillColor="#29AB87"
+            
+            />
+          </View>
+          <View style={styles.inputWrapper}>
+          <Text style={styles.heading}> Set Upper Case  </Text>
+            <BouncyCheckbox
+              isChecked={upperCase}
+              onPress={()=>setUpperCase(!upperCase)}
+              fillColor="#43GHM7"
+            
+            />
+          </View>
+          <View style={styles.inputWrapper}>
+          <Text style={styles.heading}> Set Numbers </Text>
+            <BouncyCheckbox
+              isChecked={numbers}
+              onPress={()=>setNumbers(!numbers)}
+              fillColor="#FE53E8"
+            
+            />
+          </View>
+          <View style={styles.inputWrapper}>
+          <Text style={styles.heading}> Set Symbols </Text>
+            <BouncyCheckbox
+              isChecked={symbols}
+              onPress={()=>setSymbols(!symbols)}
+              fillColor="#AB3333"
+            
+            />
+          </View>
+        
+          <View style={styles.formAction}>
+            <TouchableOpacity
+            disabled={!isValid}
+            style={styles.primaryBtn}
+            onPress={handleSubmit}
+            >
+                <Text> Genrate Password </Text>
+              </TouchableOpacity>
+            <TouchableOpacity
+            style={styles.secondaryBtn}
+            onPress={()=>{
+              handleReset();
+              resetPasswordState()
+            }}
+            >
+              <Text>
+                reset
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+       )}
+     </Formik>
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
 
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
         </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
+
+      </SafeAreaView>
+
+    </ScrollView>
+
+
+  )
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+  appContainer:{
+    
 
-export default App;
+  },
+  formContainer:{
+
+  },
+  title:{
+
+  },
+  inputWrapper:{},
+  formAction:{},
+  inputColumn:{},
+  inputStyle:{},
+  heading:{},
+  errorText:{},
+  primaryBtn:{}
+})
